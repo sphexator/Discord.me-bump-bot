@@ -16,8 +16,6 @@ namespace BumpBot
         private TwoCaptchaClient _client;
         private IConfiguration _config;
         private IWebDriver _web;
-        private static readonly Regex BumpTimer = new Regex(@"([0-9])(h).*?([0-9])(m).*?([0-9])(s)",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private static void Main() => new Program().BumpBot().GetAwaiter().GetResult();
 
