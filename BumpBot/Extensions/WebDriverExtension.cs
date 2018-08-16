@@ -1,58 +1,53 @@
-﻿using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using System;
-using System.Linq;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using OpenQA.Selenium.Internal;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 
 namespace BumpBot.Extensions
 {
     public static class WebDriverExtension
     {
-        private const long Speed = 10000;
+        private const string DefaultUrl = "https://discord.me";
+        private const string LoginUsernamePath = "/html/body/div/div[1]/div/div/div/div/form/div[1]/input";
+        private const string LoginPasswordPath = "/html/body/div/div[1]/div/div/div/div/form/div[2]/input";
+        private const string LogInSubmissionPathOne = "/html/body/div/div[1]/div/div/div/div/form/div[4]/div";
+        private const string LogInSubmissionPathTwo = "/html/body/div/div[1]/div/div/div/div/form/div[4]/div/button";
 
         public static IWebDriver ChromeDriverSettings(this ChromeDriver driver)
         {
-            //driver.NetworkConditions.DownloadThroughput = Speed;
-            //driver.NetworkConditions.UploadThroughput = Speed;
-            //driver.NetworkConditions.Latency = TimeSpan.FromMilliseconds(500);
-            //driver.NetworkConditions.IsOffline = false;
-
-            driver.Url = "http://discord.me/";
-            
+            driver.Url = DefaultUrl;
             return driver;
         }
 
-        public static IWebDriver WebDriverSettings(this IWebDriver web)
+        public static void WebDriverSettings(this IWebDriver web)
         {
-            web.Manage().Timeouts().PageLoad = TimeSpan.FromMinutes(1);
-            return web;
+            web.Manage().Timeouts().PageLoad = TimeSpan.FromMinutes(5);
+            web.Url = $"{DefaultUrl}/signin";
         }
 
         public static async Task<IWebDriver> Login(this IWebDriver web, IConfiguration config)
         {
-            web.FindElement(By.XPath("/html/body/div/div[1]/div/div/div/div/form/div[1]/input")).SendKeys(config["username"]);
-            web.FindElement(By.XPath("/html/body/div/div[1]/div/div/div/div/form/div[2]/input")).SendKeys(config["password"]);
+            web.FindElement(By.XPath(LoginUsernamePath)).SendKeys(config["username"]);
+            web.FindElement(By.XPath(LoginPasswordPath)).SendKeys(config["password"]);
             await Task.Delay(2000);
 
             try
             {
-                web.FindElement(By.XPath("/html/body/div/div[1]/div/div/div/div/form/div[4]/div")).Click();
+                web.FindElement(By.XPath(LogInSubmissionPathOne)).Click();
             }
-            catch (Exception e)
+            catch
             {
-                Console.WriteLine(e);
-                web.FindElement(By.XPath("/html/body/div/div[1]/div/div/div/div/form/div[4]/div/button")).Click();
+                web.FindElement(By.XPath(LogInSubmissionPathTwo)).Click();
             }
 
             return web;
         }
 
-        private static bool CheckLogin(this ISearchContext driver)
+        public static async Task GoToPage(this IWebDriver web, string url)
         {
-            var check = driver.FindElement(By.LinkText("sign in"));
-            return check != null;
+            web.Url = url;
+            await Task.Delay(500);
         }
     }
 }

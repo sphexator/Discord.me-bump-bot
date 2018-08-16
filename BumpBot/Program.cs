@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BumpBot.Entities;
 using BumpBot.Extensions;
@@ -27,17 +26,18 @@ namespace BumpBot
 
             _web.WebDriverSettings();
 
-            var services = ConfigureServices();
+            await Task.Delay(TimeSpan.FromSeconds(15));
 
-            _web.Url = "https://discord.me/signin";
+            var services = ConfigureServices();
 
             await _web.Login(_config);
             while (true)
             {
-                if (_web.Url != "https://discord.me/dashboard") _web.Url = "https://discord.me/dashboard";
-
+                if (_web.Url != "https://discord.me/dashboard") await _web.GoToPage("https://discord.me/dashboard");
                 var bump = _web.FindElement(By.XPath("/html/body/div/div[1]/div[4]/div[1]/div/span/span"));
+
                 await Task.Delay(200);
+
                 if (bump.Text != "Available Now!")
                 {
                     Console.WriteLine("no bump available");
@@ -47,6 +47,8 @@ namespace BumpBot
                 _web.FindElement(By.XPath("/html/body/div/div[1]/div[4]/div[1]/div/div[4]/div[1]/span/a"))
                     .Click();
 
+                await Task.Delay(500);
+
                 var googleKey = _web.FindElement(By.Id("recaptcha")).GetAttribute("data-sitekey");
                 var result = await _client.SolveCaptcha(googleKey, _web.PageSource, "username:password@ip:port",
                     ProxyType.Http);
@@ -54,6 +56,7 @@ namespace BumpBot
                 _web.FindElement(By.Id("g-recaptcha-response")).SendKeys(result);
                 await Task.Delay(500);
                 _web.FindElement(By.XPath("//*[@id=\"servers\"]/div[3]/button")).Click();
+                await Task.Delay(TimeSpan.FromSeconds(15));
             }
         }
 
