@@ -3,16 +3,17 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Threading.Tasks;
+using BumpBot.Entities;
 
 namespace BumpBot.Extensions
 {
     public static class WebDriverExtension
     {
-        private const string DefaultUrl = "https://discord.me";
-        private const string LoginUsernamePath = "/html/body/div/div[1]/div/div/div/div/form/div[1]/input";
-        private const string LoginPasswordPath = "/html/body/div/div[1]/div/div/div/div/form/div[2]/input";
-        private const string LogInSubmissionPathOne = "/html/body/div/div[1]/div/div/div/div/form/div[4]/div";
-        private const string LogInSubmissionPathTwo = "/html/body/div/div[1]/div/div/div/div/form/div[4]/div/button";
+        private const string DefaultUrl = "https://discord.me/Dashboard";
+        private const string ProfilePath = "/html/body/header/div/div/div[3]/nav/ul";
+
+        private const string Oauth2Url = "https://discordapp.com/oauth2";
+        private const string LoginUrl = "https://discordapp.com/login";
 
         public static IWebDriver ChromeDriverSettings(this ChromeDriver driver)
         {
@@ -26,22 +27,20 @@ namespace BumpBot.Extensions
             web.Url = $"{DefaultUrl}/signin";
         }
 
-        public static async Task<IWebDriver> Login(this IWebDriver web, IConfiguration config)
+        public static bool CheckUrl(this IWebDriver web, out LoginType type)
         {
-            web.FindElement(By.XPath(LoginUsernamePath)).SendKeys(config["username"]);
-            web.FindElement(By.XPath(LoginPasswordPath)).SendKeys(config["password"]);
-            await Task.Delay(2000);
+            type = LoginType.None;
+            if (web.Url == DefaultUrl) return true;
 
-            try
+            if (web.Url.StartsWith(Oauth2Url))
             {
-                web.FindElement(By.XPath(LogInSubmissionPathOne)).Click();
-            }
-            catch
-            {
-                web.FindElement(By.XPath(LogInSubmissionPathTwo)).Click();
+                type = LoginType.Oauth;
+                return false;
             }
 
-            return web;
+            if (!web.Url.StartsWith(LoginUrl)) return false;
+            type = LoginType.Login;
+            return false;
         }
 
         public static async Task GoToPage(this IWebDriver web, string url)
