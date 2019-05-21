@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using BumpBot.Entities;
 using BumpBot.Extensions;
@@ -15,54 +17,64 @@ namespace BumpBot
         private TwoCaptchaClient _client;
         private IConfiguration _config;
         private IWebDriver _web;
+        private IServiceProvider _service;
+        private bool _block = false;
 
         private static void Main() => new Program().BumpBot().GetAwaiter().GetResult();
 
         private async Task BumpBot()
         {
             _config = BuildConfig();
+            _service = ConfigureServices();
             _web = new ChromeDriver(@"Componements\");
             _client = new TwoCaptchaClient(_config["apiKey"]);
-
-            _web.WebDriverSettings();
-
             await Task.Delay(TimeSpan.FromSeconds(15));
-
-            var services = ConfigureServices();
-
-            await _web.Login(_config);
             while (true)
             {
-                if (_web.Url != "https://discord.me/dashboard") await _web.GoToPage("https://discord.me/dashboard");
-                var bump = _web.FindElement(By.XPath("/html/body/div/div[1]/div[4]/div[1]/div/span/span"));
-
-                await Task.Delay(200);
-
-                if (bump.Text != "Available Now!")
+                if (_block)
                 {
-                    Console.WriteLine("no bump available");
+                    await Task.Delay(TimeSpan.FromMinutes(1));
                     continue;
                 }
 
-                _web.FindElement(By.XPath("/html/body/div/div[1]/div[4]/div[1]/div/div[4]/div[1]/span/a"))
-                    .Click();
-
-                await Task.Delay(500);
-
-                var googleKey = _web.FindElement(By.Id("recaptcha")).GetAttribute("data-sitekey");
-                var result = await _client.SolveCaptcha(googleKey, _web.PageSource, "username:password@ip:port",
-                    ProxyType.Http);
-                if (result == null) continue;
-                _web.FindElement(By.Id("g-recaptcha-response")).SendKeys(result);
-                await Task.Delay(500);
-                _web.FindElement(By.XPath("//*[@id=\"servers\"]/div[3]/button")).Click();
                 await Task.Delay(TimeSpan.FromSeconds(15));
             }
+        }
+
+        private async Task CheckLinkAsync(CancellationToken token)
+        {
+            while (token.IsCancellationRequested)
+            {
+                if (!_web.CheckUrl(out var type))
+                {
+                    if(type == LoginType.Login) {  }
+                    if(type == LoginType.Oauth) {  }
+                }
+                await Task.Delay(TimeSpan.FromMinutes(10), token);
+            }
+        }
+
+        private async Task BumpAsync()
+        {
+            var bumpCards = _web.FindElements(By.ClassName("modal-content bump-modal"));
+            for (var i = 0; i < bumpCards.Count; i++)
+            {
+                var x = bumpCards[i];
+
+            }
+            var googleKey = _web.FindElement(By.Id("recaptcha")).GetAttribute("data-sitekey");
+            var result = await _client.SolveCaptcha(googleKey, _web.PageSource, "username:password@ip:port",
+                ProxyType.Http);
+            if (result == null) return;
+            _web.FindElement(By.Id("g-recaptcha-response")).SendKeys(result);
+            await Task.Delay(500);
+            _web.FindElement(By.XPath("//*[@id=\"servers\"]/div[3]/button")).Click();
         }
 
         private IServiceProvider ConfigureServices()
         {
             var services = new ServiceCollection();
+            services.AddSingleton<HttpClient>();
             services.AddSingleton(_config);
             services.AddSingleton(_client);
             services.AddSingleton(_web);
@@ -70,7 +82,7 @@ namespace BumpBot
             return services.BuildServiceProvider();
         }
 
-        private static IConfiguration BuildConfig()
+        private IConfiguration BuildConfig()
         {
             return new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
