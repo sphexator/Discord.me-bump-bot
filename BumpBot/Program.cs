@@ -1,25 +1,23 @@
 ﻿using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using _2Captcha;
 using BumpBot.Entities;
 using BumpBot.Extensions;
 using BumpBot.Utility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 
 namespace BumpBot
 {
     public class Program
     {
-        private TwoCaptchaClient _client;
         private IConfiguration _config;
-        private IWebDriver _web;
+        private ChromeDriver _web;
         private IServiceProvider _service;
-        private bool _block = false;
+        private TwoCaptcha _captcha;
 
         private static void Main() => new Program().BumpBot().GetAwaiter().GetResult();
 
@@ -27,11 +25,8 @@ namespace BumpBot
         {
             _config = BuildConfig();
             _service = ConfigureServices();
+            _captcha = new TwoCaptcha(_config["apiKey"]);
             _web = new ChromeDriver(@"Componements\");
-            _client = new TwoCaptchaClient(_config["apiKey"]);
-            
-
-
             await Task.Delay(-1);
         }
 
@@ -52,11 +47,10 @@ namespace BumpBot
         {
             var services = new ServiceCollection();
             services.UseQuartz(typeof(Bump));
-            services.AddSingleton<HttpClient>();
+            services.AddSingleton<Bump>();
             services.AddSingleton(_config);
-            services.AddSingleton(_client);
             services.AddSingleton(_web);
-
+            services.AddSingleton(_captcha);
             return services.BuildServiceProvider();
         }
 

@@ -1,23 +1,25 @@
 ﻿using System;
 using System.Threading.Tasks;
-using BumpBot.Entities;
+using _2Captcha;
+using BumpBot.Resources;
 using Microsoft.Extensions.Configuration;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 using Quartz;
 
 namespace BumpBot
 {
     public class Bump : IJob
     {
-        private readonly TwoCaptchaClient _client;
         private readonly IConfiguration _config;
-        private readonly IWebDriver _web;
+        private readonly ChromeDriver _web;
+        private readonly TwoCaptcha _captcha;
 
-        public Bump(TwoCaptchaClient client, IConfiguration config, IWebDriver web)
+        public Bump(IConfiguration config, ChromeDriver web, TwoCaptcha captcha)
         {
-            _client = client;
             _config = config;
             _web = web;
+            _captcha = captcha;
         }
 
         public Task Execute(IJobExecutionContext context) => BumpAsync();
@@ -30,18 +32,15 @@ namespace BumpBot
                 var x = bumpCards[i];
                 var server = x.FindElement(By.Name("serverEid"));
                 var id = server.GetAttribute("value");
+                var googleKey = x.FindElement(By.Id("recaptcha")).GetAttribute("data-sitekey");
+                var result = await _captcha.SolveReCaptchaV2(googleKey, Constant.DefaultUrl);
+                if (!result.Success) continue;
+                
+                x.FindElement(By.Id("g-recaptcha-response")).SendKeys(result.Response);
                 var button = x.FindElement(By.ClassName("btn btn-primary"));
                 button.Click();
                 await Task.Delay(TimeSpan.FromSeconds(5));
             }
-
-            var googleKey = _web.FindElement(By.Id("recaptcha")).GetAttribute("data-sitekey");
-            var result = await _client.SolveCaptcha(googleKey, _web.PageSource, "username:password@ip:port",
-                ProxyType.Http);
-            if (result == null) return;
-            _web.FindElement(By.Id("g-recaptcha-response")).SendKeys(result);
-            await Task.Delay(500);
-            _web.FindElement(By.XPath("//*[@id=\"servers\"]/div[3]/button")).Click();
         }
     }
 }
