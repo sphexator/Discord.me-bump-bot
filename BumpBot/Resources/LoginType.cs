@@ -1,4 +1,4 @@
-﻿namespace BumpBot.Entities
+﻿namespace BumpBot.Resources
 {
     public enum LoginType
     {
