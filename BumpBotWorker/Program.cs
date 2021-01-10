@@ -1,4 +1,4 @@
-using _2Captcha;
+using _2CaptchaAPI;
 using BumpBotWorker.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +19,7 @@ namespace BumpBotWorker
                 {
                     services.AddHostedService<Worker>();
                     services.UseQuartz(typeof(Worker));
-                    services.AddSingleton(new TwoCaptcha(""));
+                    services.AddSingleton(new _2Captcha(""));
                     services.AddSingleton(new ChromeDriver("Componements/"));
                 });
     }

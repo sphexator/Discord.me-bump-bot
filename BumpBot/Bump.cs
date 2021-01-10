@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using _2Captcha;
+using _2CaptchaAPI;
 using BumpBot.Resources;
 using Microsoft.Extensions.Configuration;
 using OpenQA.Selenium;
@@ -13,9 +13,9 @@ namespace BumpBot
     {
         private readonly IConfiguration _config;
         private readonly ChromeDriver _web;
-        private readonly TwoCaptcha _captcha;
+        private readonly _2Captcha _captcha;
 
-        public Bump(IConfiguration config, ChromeDriver web, TwoCaptcha captcha)
+        public Bump(IConfiguration config, ChromeDriver web, _2Captcha captcha)
         {
             _config = config;
             _web = web;

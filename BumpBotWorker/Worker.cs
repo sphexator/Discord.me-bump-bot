@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using _2Captcha;
+using _2CaptchaAPI;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenQA.Selenium.Chrome;
@@ -15,9 +13,9 @@ namespace BumpBotWorker
     {
         private readonly ILogger<Worker> _logger;
         private readonly ChromeDriver _chrome;
-        private readonly TwoCaptcha _captcha;
+        private readonly _2Captcha _captcha;
 
-        public Worker(ILogger<Worker> logger, ChromeDriver chrome, TwoCaptcha captcha)
+        public Worker(ILogger<Worker> logger, ChromeDriver chrome, _2Captcha captcha)
         {
             _logger = logger;
             _chrome = chrome;

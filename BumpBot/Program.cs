@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using _2Captcha;
+using _2CaptchaAPI;
 using BumpBot.Extensions;
 using BumpBot.Resources;
 using BumpBot.Utility;
@@ -17,7 +17,7 @@ namespace BumpBot
         private IConfiguration _config;
         private ChromeDriver _web;
         private IServiceProvider _service;
-        private TwoCaptcha _captcha;
+        private _2Captcha _captcha;
 
         private static void Main() => new Program().BumpBot().GetAwaiter().GetResult();
 
@@ -25,7 +25,7 @@ namespace BumpBot
         {
             _config = BuildConfig();
             _service = ConfigureServices();
-            _captcha = new TwoCaptcha(_config["apiKey"]);
+            _captcha = new _2Captcha(_config["apiKey"]);
             _web = new ChromeDriver(@"Componements\");
             await Task.Delay(-1);
         }
